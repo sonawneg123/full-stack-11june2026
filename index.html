@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PyBridge Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a0f;--surface:#12121a;--card:#1a1a26;--border:#2a2a3d;
+      --accent:#7c5cfc;--accent2:#fc5c7d;--accent3:#5cf8b4;--accent4:#fcb95c;
+      --text:#e8e8f0;--muted:#6b6b8a;--success:#5cf8b4;--error:#fc5c7d;
+      --font-head:'Syne',sans-serif;--font-mono:'JetBrains Mono',monospace;
+    }
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-mono);min-height:100vh;overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,92,252,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,92,252,0.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+    .orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+    .orb1{width:400px;height:400px;background:rgba(124,92,252,0.15);top:-100px;left:-100px}
+    .orb2{width:300px;height:300px;background:rgba(252,92,125,0.1);bottom:100px;right:-50px}
+
+    /* Layout */
+    .wrapper{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 24px 80px}
+
+    /* Header */
+    header{padding:40px 0 32px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);margin-bottom:0}
+    .logo{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:12px;display:grid;place-items:center;font-size:20px;flex-shrink:0}
+    header h1{font-family:var(--font-head);font-size:26px;font-weight:800}
+    header h1 span{color:var(--accent)}
+    .status-pill{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:6px 14px;font-size:12px;color:var(--muted)}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);transition:background 0.3s}
+    .dot.live{background:var(--success);box-shadow:0 0 8px var(--success);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+    /* Tabs */
+    .tabs{display:flex;gap:4px;padding:20px 0 0;border-bottom:1px solid var(--border);margin-bottom:32px;overflow-x:auto}
+    .tab{padding:10px 20px;border:none;background:transparent;color:var(--muted);font-family:var(--font-mono);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap}
+    .tab:hover{color:var(--text)}
+    .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+    /* Tab panels */
+    .panel{display:none}.panel.active{display:block}
+
+    /* Section label */
+    .section-label{font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
+
+    /* Grid */
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color 0.2s,transform 0.2s,box-shadow 0.2s;position:relative;overflow:hidden}
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:opacity 0.2s}
+    .card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 32px rgba(124,92,252,0.15)}
+    .card:hover::before{opacity:1}
+    .card-wide{grid-column:1/-1}
+    .card-icon{font-size:28px;margin-bottom:12px}
+    .card-title{font-family:var(--font-head);font-size:16px;font-weight:700;margin-bottom:6px}
+    .card-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+
+    /* Inputs */
+    input[type=text],input[type=number],input[type=url],textarea,select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-mono);font-size:13px;padding:10px 14px;margin-bottom:12px;outline:none;transition:border-color 0.2s;resize:vertical}
+    input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+    textarea{min-height:80px}
+    select option{background:var(--surface)}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:none;border-radius:8px;font-family:var(--font-mono);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#5a3de0);color:#fff}
+    .btn-primary:hover{opacity:0.9;transform:scale(1.02)}
+    .btn-primary:active{transform:scale(0.98)}
+    .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+    .btn-danger{background:rgba(252,92,125,0.15);color:var(--error);border:1px solid rgba(252,92,125,0.3)}
+    .btn-danger:hover{background:rgba(252,92,125,0.25)}
+    .btn-success{background:rgba(92,248,180,0.15);color:var(--success);border:1px solid rgba(92,248,180,0.3)}
+    .btn-sm{padding:6px 12px;font-size:12px}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+    /* Result */
+    .result{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.8;min-height:48px;color:var(--muted);transition:all 0.3s}
+    .result.success{border-color:rgba(92,248,180,0.3);color:var(--text)}
+    .result.error{border-color:rgba(252,92,125,0.3);color:var(--error)}
+    .result .key{color:var(--accent)}
+    .result .val{color:var(--accent3)}
+    .spin{animation:spin 0.8s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Config */
+    .config-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;margin-bottom:0;flex-wrap:wrap}
+    .config-bar label{font-size:12px;color:var(--muted);white-space:nowrap}
+    .config-bar input{flex:1;min-width:220px;margin:0}
+
+    /* Notes & Todo List */
+    .item-list{display:flex;flex-direction:column;gap:10px;margin-top:16px;max-height:400px;overflow-y:auto}
+    .note-item,.todo-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;gap:12px;align-items:flex-start;transition:border-color 0.2s}
+    .note-item:hover,.todo-item:hover{border-color:var(--accent)}
+    .note-body{flex:1;min-width:0}
+    .note-title{font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .note-content{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:6px}
+    .note-meta{font-size:11px;color:var(--muted)}
+    .badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600}
+    .badge-general{background:rgba(124,92,252,0.2);color:var(--accent)}
+    .badge-work{background:rgba(252,185,92,0.2);color:var(--accent4)}
+    .badge-personal{background:rgba(92,248,180,0.2);color:var(--accent3)}
+    .todo-check{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;cursor:pointer;flex-shrink:0;margin-top:2px;display:grid;place-items:center;transition:all 0.2s}
+    .todo-check.done{background:var(--accent);border-color:var(--accent)}
+    .todo-task{font-size:13px;flex:1}
+    .todo-task.done{text-decoration:line-through;color:var(--muted)}
+    .priority-high{color:var(--error);font-size:11px}
+    .priority-medium{color:var(--accent4);font-size:11px}
+    .priority-low{color:var(--success);font-size:11px}
+
+    /* Analytics */
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:24px}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+    .stat-num{font-family:var(--font-head);font-size:36px;font-weight:800;color:var(--accent)}
+    .stat-label{font-size:12px;color:var(--muted);margin-top:4px}
+    .endpoint-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)}
+    .endpoint-bar{flex:1;height:6px;background:var(--surface);border-radius:100px;overflow:hidden}
+    .endpoint-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:100px;transition:width 0.6s}
+    .endpoint-name{font-size:12px;color:var(--text);min-width:160px}
+    .endpoint-hits{font-size:12px;color:var(--accent);min-width:40px;text-align:right}
+
+    /* URL shortener */
+    .url-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+    .url-code{font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--accent);min-width:70px}
+    .url-original{font-size:12px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .url-clicks{font-size:12px;color:var(--accent4)}
+
+    @media(max-width:600px){header{flex-wrap:wrap}.status-pill{margin-left:0}.tabs{gap:2px}.tab{padding:8px 12px;font-size:12px}}
+  </style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">⚡</div>
+    <h1>PyBridge <span>Pro</span></h1>
+    <div class="status-pill">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">Not connected</span>
+    </div>
+  </header>
+
+  <!-- Config -->
+  <div style="padding:20px 0 0">
+    <div class="config-bar">
+      <label>Backend URL</label>
+      <input type="text" id="backendUrl" value="http://localhost:8000"/>
+      <button class="btn btn-primary" onclick="checkConnection()">🔌 Connect</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('tools')">🛠 Tools</button>
+    <button class="tab" onclick="switchTab('notes')">📝 Notes</button>
+    <button class="tab" onclick="switchTab('todos')">✅ Todos</button>
+    <button class="tab" onclick="switchTab('urls')">🔗 URL Shortener</button>
+    <button class="tab" onclick="switchTab('analytics')">📊 Analytics</button>
+  </div>
+
+  <!-- ── TOOLS ── -->
+  <div id="panel-tools" class="panel active">
+    <p class="section-label">// API Tools</p>
+    <div class="cards-grid">
+
+      <div class="card">
+        <div class="card-icon">🏓</div>
+        <div class="card-title">Ping Server</div>
+        <div class="card-desc">Health check — verify backend is alive.</div>
+        <button class="btn btn-primary" onclick="callPing(this)"><span>▶</span> ping()</button>
+        <div class="result" id="pingResult">Waiting...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🕐</div>
+        <div class="card-title">Server Time</div>
+        <div class="card-desc">Fetch date, time, and Unix timestamp.</div>
+        <button class="btn btn-primary" onclick="callServerTime(this)"><span>▶</span> server_time()</button>
+        <div class="result" id="timeResult">Waiting...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <div class="card-title">Reverse Text</div>
+        <div class="card-desc">Send a string, get it reversed.</div>
+        <input type="text" id="reverseInput" placeholder="Type something..."/>
+        <button class="btn btn-primary" onclick="callReverseText(this)"><span>▶</span> reverse_text()</button>
+        <div class="result" id="reverseResult">Waiting...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Word Stats</div>
+        <div class="card-desc">Analyze words, chars, and sentences.</div>
+        <input type="text" id="statsInput" placeholder="Enter a sentence..."/>
+        <button class="btn btn-primary" onclick="callWordStats(this)"><span>▶</span> word_stats()</button>
+        <div class="result" id="statsResult">Waiting...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">√</div>
+        <div class="card-title">Square Root</div>
+        <div class="card-desc">Compute sqrt, square, and perfect-square check.</div>
+        <input type="number" id="sqrtInput" placeholder="e.g. 144"/>
+        <button class="btn btn-primary" onclick="callSqrt(this)"><span>▶</span> compute_sqrt()</button>
+        <div class="result" id="sqrtResult">Waiting...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">BMI Calculator</div>
+        <div class="card-desc">Calculate Body Mass Index from weight and height.</div>
+        <input type="number" id="bmiWeight" placeholder="Weight (kg)"/>
+        <input type="number" id="bmiHeight" placeholder="Height (cm)"/>
+        <button class="btn btn-primary" onclick="callBMI(this)"><span>▶</span> calculate_bmi()</button>
+        <div class="result" id="bmiResult">Waiting...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🎂</div>
+        <div class="card-title">Age Calculator</div>
+        <div class="card-desc">Find your exact age and days until birthday.</div>
+        <input type="number" id="ageYear" placeholder="Birth Year (e.g. 1995)"/>
+        <input type="number" id="ageMonth" placeholder="Birth Month (e.g. 6)"/>
+        <input type="number" id="ageDay" placeholder="Birth Day (e.g. 15)"/>
+        <button class="btn btn-primary" onclick="callAge(this)"><span>▶</span> calculate_age()</button>
+        <div class="result" id="ageResult">Waiting...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🔐</div>
+        <div class="card-title">Password Generator</div>
+        <div class="card-desc">Generate a cryptographically secure password.</div>
+        <input type="number" id="passLength" placeholder="Length (8–64, default 12)" min="8" max="64"/>
+        <button class="btn btn-primary" onclick="callGeneratePassword(this)"><span>▶</span> generate_password()</button>
+        <div class="result" id="passResult">Waiting...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">💬</div>
+        <div class="card-title">Random Quote</div>
+        <div class="card-desc">Fetch a random developer quote.</div>
+        <button class="btn btn-primary" onclick="callRandomQuote(this)"><span>▶</span> random_quote()</button>
+        <div class="result" id="quoteResult">Waiting...</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── NOTES ── -->
+  <div id="panel-notes" class="panel">
+    <p class="section-label">// Notes — Stored in SQLite DB</p>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon">➕</div>
+        <div class="card-title">Create Note</div>
+        <div class="card-desc">Add a new note to the database.</div>
+        <input type="text" id="noteTitle" placeholder="Title"/>
+        <textarea id="noteContent" placeholder="Content..."></textarea>
+        <select id="noteCategory">
+          <option value="General">General</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+        </select>
+        <button class="btn btn-primary" onclick="createNote(this)"><span>▶</span> create_note()</button>
+        <div class="result" id="noteCreateResult">Waiting...</div>
+      </div>
+      <div class="card card-wide">
+        <div class="card-icon">📋</div>
+        <div class="card-title">All Notes <span id="noteCount" style="color:var(--muted);font-size:13px"></span></div>
+        <div class="card-desc">All notes saved in the database.</div>
+        <button class="btn btn-primary btn-sm" onclick="loadNotes(this)"><span>▶</span> get_notes()</button>
+        <div class="item-list" id="notesList"><p style="color:var(--muted);font-size:13px;padding:12px 0">Click "get_notes()" to load</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TODOS ── -->
+  <div id="panel-todos" class="panel">
+    <p class="section-label">// Todos — Stored in SQLite DB</p>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon">➕</div>
+        <div class="card-title">Add Todo</div>
+        <div class="card-desc">Create a new task in the database.</div>
+        <input type="text" id="todoTask" placeholder="Task description..."/>
+        <select id="todoPriority">
+          <option value="Low">Low priority</option>
+          <option value="Medium" selected>Medium priority</option>
+          <option value="High">High priority</option>
+        </select>
+        <button class="btn btn-primary" onclick="createTodo(this)"><span>▶</span> create_todo()</button>
+        <div class="result" id="todoCreateResult">Waiting...</div>
+      </div>
+      <div class="card card-wide">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Todo List <span id="todoStats" style="color:var(--muted);font-size:13px"></span></div>
+        <div class="card-desc">All tasks saved in the database. Click checkbox to toggle complete.</div>
+        <button class="btn btn-primary btn-sm" onclick="loadTodos(this)"><span>▶</span> get_todos()</button>
+        <div class="item-list" id="todosList"><p style="color:var(--muted);font-size:13px;padding:12px 0">Click "get_todos()" to load</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── URL SHORTENER ── -->
+  <div id="panel-urls" class="panel">
+    <p class="section-label">// URL Shortener — Stored in SQLite DB</p>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon">✂️</div>
+        <div class="card-title">Shorten URL</div>
+        <div class="card-desc">Generate a short code for any URL.</div>
+        <input type="text" id="longUrl" placeholder="https://example.com/very/long/url"/>
+        <button class="btn btn-primary" onclick="shortenUrl(this)"><span>▶</span> shorten_url()</button>
+        <div class="result" id="urlResult">Waiting...</div>
+      </div>
+      <div class="card card-wide">
+        <div class="card-icon">📋</div>
+        <div class="card-title">All Shortened URLs</div>
+        <div class="card-desc">All short codes stored in the database.</div>
+        <button class="btn btn-primary btn-sm" onclick="loadUrls(this)"><span>▶</span> get_urls()</button>
+        <div class="item-list" id="urlsList"><p style="color:var(--muted);font-size:13px;padding:12px 0">Click "get_urls()" to load</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ANALYTICS ── -->
+  <div id="panel-analytics" class="panel">
+    <p class="section-label">// Analytics — Live from SQLite DB</p>
+    <button class="btn btn-primary btn-sm" onclick="loadAnalytics(this)" style="margin-bottom:24px"><span>▶</span> get_analytics()</button>
+    <div class="stat-grid" id="statGrid">
+      <div class="stat-card"><div class="stat-num" id="statCalls">—</div><div class="stat-label">Total API Calls</div></div>
+      <div class="stat-card"><div class="stat-num" id="statNotes">—</div><div class="stat-label">Notes Saved</div></div>
+      <div class="stat-card"><div class="stat-num" id="statTodos">—</div><div class="stat-label">Todos Created</div></div>
+      <div class="stat-card"><div class="stat-num" id="statUrls">—</div><div class="stat-label">URLs Shortened</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px">🏆 Top Endpoints</div>
+      <div id="endpointChart"><p style="color:var(--muted);font-size:13px">Load analytics to see chart</p></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BASE = () => document.getElementById('backendUrl').value.replace(/\/$/, '');
+
+// ── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', t.getAttribute('onclick').includes(`'${name}'`)));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function setLoading(btn, yes) {
+  if (!btn) return;
+  if (yes) { btn.disabled = true; btn.dataset.orig = btn.innerHTML; btn.innerHTML = '<span class="spin">⟳</span> Running...'; }
+  else { btn.disabled = false; btn.innerHTML = btn.dataset.orig; }
+}
+function showResult(id, data, isError = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'result ' + (isError ? 'error' : 'success');
+  if (isError) { el.textContent = '✗ ' + data; return; }
+  el.innerHTML = Object.entries(data).map(([k, v]) =>
+    `<span class="key">${k}</span>: <span class="val">${JSON.stringify(v)}</span>`
+  ).join('<br/>');
+}
+async function apiFetch(path, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(BASE() + path, opts);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ── Connection ───────────────────────────────────────────────────────────────
+async function checkConnection() {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'dot'; txt.textContent = 'Connecting...';
+  try {
+    const d = await apiFetch('/ping');
+    dot.className = 'dot live'; txt.textContent = 'Live · ' + d.time;
+  } catch { dot.className = 'dot'; txt.textContent = 'Connection failed'; }
+}
+
+// ── Tools ────────────────────────────────────────────────────────────────────
+async function callPing(btn) { setLoading(btn,true); try { showResult('pingResult', await apiFetch('/ping')); } catch(e) { showResult('pingResult', e.message, true); } finally { setLoading(btn,false); } }
+async function callServerTime(btn) { setLoading(btn,true); try { showResult('timeResult', await apiFetch('/server-time')); } catch(e) { showResult('timeResult', e.message, true); } finally { setLoading(btn,false); } }
+async function callReverseText(btn) {
+  const text = document.getElementById('reverseInput').value;
+  if (!text) { showResult('reverseResult','Enter text first',true); return; }
+  setLoading(btn,true); try { showResult('reverseResult', await apiFetch('/reverse-text','POST',{text})); } catch(e) { showResult('reverseResult',e.message,true); } finally { setLoading(btn,false); }
+}
+async function callWordStats(btn) {
+  const text = document.getElementById('statsInput').value;
+  if (!text) { showResult('statsResult','Enter text first',true); return; }
+  setLoading(btn,true); try { showResult('statsResult', await apiFetch('/word-stats','POST',{text})); } catch(e) { showResult('statsResult',e.message,true); } finally { setLoading(btn,false); }
+}
+async function callSqrt(btn) {
+  const number = parseFloat(document.getElementById('sqrtInput').value);
+  if (isNaN(number)) { showResult('sqrtResult','Enter a number first',true); return; }
+  setLoading(btn,true); try { showResult('sqrtResult', await apiFetch('/sqrt','POST',{number})); } catch(e) { showResult('sqrtResult',e.message,true); } finally { setLoading(btn,false); }
+}
+async function callBMI(btn) {
+  const weight_kg = parseFloat(document.getElementById('bmiWeight').value);
+  const height_cm = parseFloat(document.getElementById('bmiHeight').value);
+  if (isNaN(weight_kg)||isNaN(height_cm)) { showResult('bmiResult','Enter weight and height',true); return; }
+  setLoading(btn,true); try { showResult('bmiResult', await apiFetch('/bmi','POST',{weight_kg,height_cm})); } catch(e) { showResult('bmiResult',e.message,true); } finally { setLoading(btn,false); }
+}
+async function callAge(btn) {
+  const birth_year = parseInt(document.getElementById('ageYear').value);
+  const birth_month = parseInt(document.getElementById('ageMonth').value);
+  const birth_day = parseInt(document.getElementById('ageDay').value);
+  if (isNaN(birth_year)||isNaN(birth_month)||isNaN(birth_day)) { showResult('ageResult','Enter full birth date',true); return; }
+  setLoading(btn,true); try { showResult('ageResult', await apiFetch('/age-calculator','POST',{birth_year,birth_month,birth_day})); } catch(e) { showResult('ageResult',e.message,true); } finally { setLoading(btn,false); }
+}
+async function callGeneratePassword(btn) {
+  const length = parseInt(document.getElementById('passLength').value)||12;
+  setLoading(btn,true); try { showResult('passResult', await apiFetch('/generate-password','POST',{length})); } catch(e) { showResult('passResult',e.message,true); } finally { setLoading(btn,false); }
+}
+async function callRandomQuote(btn) {
+  setLoading(btn,true); try { showResult('quoteResult', await apiFetch('/random-quote')); } catch(e) { showResult('quoteResult',e.message,true); } finally { setLoading(btn,false); }
+}
+
+// ── Notes ────────────────────────────────────────────────────────────────────
+async function createNote(btn) {
+  const title = document.getElementById('noteTitle').value;
+  const content = document.getElementById('noteContent').value;
+  const category = document.getElementById('noteCategory').value;
+  if (!title||!content) { showResult('noteCreateResult','Title and content required',true); return; }
+  setLoading(btn,true);
+  try {
+    const d = await apiFetch('/notes','POST',{title,content,category});
+    showResult('noteCreateResult', {message: d.message, id: d.note.id, title: d.note.title});
+    document.getElementById('noteTitle').value=''; document.getElementById('noteContent').value='';
+    loadNotes();
+  } catch(e) { showResult('noteCreateResult',e.message,true); } finally { setLoading(btn,false); }
+}
+async function loadNotes(btn) {
+  setLoading(btn,true);
+  try {
+    const d = await apiFetch('/notes');
+    document.getElementById('noteCount').textContent = `(${d.count})`;
+    const list = document.getElementById('notesList');
+    if (!d.notes.length) { list.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">No notes yet. Create one!</p>'; return; }
+    list.innerHTML = d.notes.map(n => `
+      <div class="note-item" id="note-${n.id}">
+        <div class="note-body">
+          <div class="note-title">${n.title}</div>
+          <div class="note-content">${n.content}</div>
+          <div class="note-meta">
+            <span class="badge badge-${n.category.toLowerCase()}">${n.category}</span>
+            &nbsp;${n.created_at.slice(0,16)}
+          </div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteNote(${n.id})">🗑</button>
+      </div>`).join('');
+  } catch(e) { document.getElementById('notesList').innerHTML = `<p style="color:var(--error)">${e.message}</p>`; }
+  finally { setLoading(btn,false); }
+}
+async function deleteNote(id) {
+  try { await apiFetch(`/notes/${id}`,'DELETE'); loadNotes(); } catch(e) { alert(e.message); }
+}
+
+// ── Todos ────────────────────────────────────────────────────────────────────
+async function createTodo(btn) {
+  const task = document.getElementById('todoTask').value;
+  const priority = document.getElementById('todoPriority').value;
+  if (!task) { showResult('todoCreateResult','Enter a task',true); return; }
+  setLoading(btn,true);
+  try {
+    const d = await apiFetch('/todos','POST',{task,priority});
+    showResult('todoCreateResult', {message: d.message, id: d.todo.id});
+    document.getElementById('todoTask').value='';
+    loadTodos();
+  } catch(e) { showResult('todoCreateResult',e.message,true); } finally { setLoading(btn,false); }
+}
+async function loadTodos(btn) {
+  setLoading(btn,true);
+  try {
+    const d = await apiFetch('/todos');
+    document.getElementById('todoStats').textContent = `(${d.completed}/${d.total} done)`;
+    const list = document.getElementById('todosList');
+    if (!d.todos.length) { list.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">No todos yet. Add one!</p>'; return; }
+    list.innerHTML = d.todos.map(t => `
+      <div class="todo-item" id="todo-${t.id}">
+        <div class="todo-check ${t.completed?'done':''}" onclick="toggleTodo(${t.id})">${t.completed?'✓':''}</div>
+        <div class="todo-body" style="flex:1">
+          <div class="todo-task ${t.completed?'done':''}">${t.task}</div>
+          <span class="priority-${t.priority.toLowerCase()}">${t.priority} priority</span>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteTodo(${t.id})">🗑</button>
+      </div>`).join('');
+  } catch(e) { document.getElementById('todosList').innerHTML = `<p style="color:var(--error)">${e.message}</p>`; }
+  finally { setLoading(btn,false); }
+}
+async function toggleTodo(id) {
+  try { await apiFetch(`/todos/${id}/toggle`,'PATCH'); loadTodos(); } catch(e) { alert(e.message); }
+}
+async function deleteTodo(id) {
+  try { await apiFetch(`/todos/${id}`,'DELETE'); loadTodos(); } catch(e) { alert(e.message); }
+}
+
+// ── URL Shortener ─────────────────────────────────────────────────────────────
+async function shortenUrl(btn) {
+  const url = document.getElementById('longUrl').value;
+  if (!url) { showResult('urlResult','Enter a URL',true); return; }
+  setLoading(btn,true);
+  try {
+    const d = await apiFetch('/shorten-url','POST',{url});
+    showResult('urlResult', {short_code: d.short_code, clicks: d.clicks, status: d.already_existed?'existing':'new'});
+    loadUrls();
+  } catch(e) { showResult('urlResult',e.message,true); } finally { setLoading(btn,false); }
+}
+async function loadUrls(btn) {
+  setLoading(btn,true);
+  try {
+    const d = await apiFetch('/urls');
+    const list = document.getElementById('urlsList');
+    if (!d.urls.length) { list.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">No URLs shortened yet.</p>'; return; }
+    list.innerHTML = d.urls.map(u => `
+      <div class="url-item">
+        <div class="url-code">${u.short_code}</div>
+        <div class="url-original" title="${u.original_url}">${u.original_url}</div>
+        <div class="url-clicks">👁 ${u.clicks}</div>
+      </div>`).join('');
+  } catch(e) { document.getElementById('urlsList').innerHTML = `<p style="color:var(--error)">${e.message}</p>`; }
+  finally { setLoading(btn,false); }
+}
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+async function loadAnalytics(btn) {
+  setLoading(btn,true);
+  try {
+    const d = await apiFetch('/analytics');
+    document.getElementById('statCalls').textContent = d.total_api_calls;
+    document.getElementById('statNotes').textContent = d.total_notes;
+    document.getElementById('statTodos').textContent = d.total_todos;
+    document.getElementById('statUrls').textContent = d.total_short_urls;
+    const max = d.top_endpoints[0]?.hits || 1;
+    document.getElementById('endpointChart').innerHTML = d.top_endpoints.map(e => `
+      <div class="endpoint-row">
+        <div class="endpoint-name">${e.endpoint}</div>
+        <div class="endpoint-bar"><div class="endpoint-fill" style="width:${(e.hits/max)*100}%"></div></div>
+        <div class="endpoint-hits">${e.hits}</div>
+      </div>`).join('') || '<p style="color:var(--muted);font-size:13px">No API calls logged yet.</p>';
+  } catch(e) { console.error(e); }
+  finally { setLoading(btn,false); }
+}
+
+window.addEventListener('load', checkConnection);
+</script>
+</body>
+</html>
